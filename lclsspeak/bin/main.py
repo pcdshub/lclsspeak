@@ -16,7 +16,7 @@ import lclsspeak
 DESCRIPTION = __doc__
 
 
-MODULES = ("help", )
+MODULES = ("dump", )
 
 
 def _try_import(module):
