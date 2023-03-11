@@ -105,6 +105,7 @@ class CsvData(DataSource):
     tags: list[str]
     encoding: str = "utf-8"
     _data: Optional[list[Definition]] = None
+    delimiter: str = ","
 
     @property
     def source(self) -> str:
@@ -117,9 +118,12 @@ class CsvData(DataSource):
         else:
             source = requests.get(self.url).text
 
-        df = pd.read_csv(io.StringIO(source))
+        df = pd.read_csv(io.StringIO(source), delimiter=self.delimiter)
         for defn in self.mapping.map_to_definitions(df):
-            defn.source = self.source
+            if not defn.source:
+                defn.source = self.source
+            else:
+                defn.source = " - ".join((self.source, defn.source))
             yield defn
 
 
@@ -314,6 +318,18 @@ _packaged_data: list[DataSource] = [
             },
         ),
         tags=[],
+    ),
+    CsvData(
+        url="https://slac.sharepoint.com/sites/pub/default.aspx",
+        cached=util.DATA_PATH / "from_doc_tables.csv",
+        mapping=NamedData(
+            column_to_key={
+                "Acronym": "name",
+                "Definition": "definition",
+                "Source(s)": "source",
+            },
+        ),
+        tags=["scraped"],
     ),
 ]
 
