@@ -3,11 +3,11 @@
 """
 
 import argparse
+import dataclasses
 import html
 import json
 
 from ..definition import Definition
-
 from ..packaged import load_packaged_data
 
 DESCRIPTION = __doc__
@@ -31,29 +31,34 @@ def build_arg_parser(argparser=None):
 
 def dump(defn: Definition, format: str) -> str:
     if format == "json":
-        return json.dumps(vars(defn), sort_keys=True)
+        return json.dumps(dataclasses.asdict(defn), sort_keys=True)
     elif format == "html":
-        def _td(text: str) -> str:
-            text = html.escape(text)
+        def _td(text: str, escape: bool = True) -> str:
+            if escape:
+                text = html.escape(text)
             return f"<td>{text}</td>"
 
         def _tr(*items: str) -> str:
             text = "".join(items)
             return f"<tr>{text}</tr>"
 
+        def _href(text: str, url: str, target: str = "_blank") -> str:
+            return f'<a href="{url}" target={target}>{text}</a>'
+
+        url = _href(defn.url.text, defn.url.url) if defn.url is not None else ""
         return _tr(
-            *(
-                _td(getattr(defn, attr))
-                for attr in ("name", "definition", "source")
-            )
+            _td(defn.name),
+            _td(defn.definition),
+            _td(defn.source),
+            _td(url, escape=False),
         )
-        
+
     raise ValueError(f"Unsupported format: {format}")
 
 
 def format_header(format: str) -> str:
     if format == "html":
-        return "<table><tr><th>Name</th><th>Definition</th><th>Source</th></tr><tbody>"
+        return "<table><tr><th>Name</th><th>Definition</th><th>Source</th><th>Link</th></tr><tbody>"
 
     return ""
 

@@ -3,11 +3,18 @@ import enum
 from typing import Optional
 
 
+@dataclasses.dataclass(frozen=True)
+class URL:
+    url: str
+    text: str
+
+
 @dataclasses.dataclass
 class Definition:
     name: str
     definition: str
     source: str
+    url: Optional[URL] = None
     alternates: Optional[list[str]] = None
     tags: list[str] = dataclasses.field(default_factory=list)
     metadata: dict[str, str] = dataclasses.field(default_factory=dict)

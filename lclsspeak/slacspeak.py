@@ -1,14 +1,16 @@
-import bs4
 import dataclasses
-import requests
-
 from typing import Optional
 
-from .definition import Definition, StandardTag
-from . import util
+import bs4
+import requests
 
+from . import util
+from .definition import URL, Definition, StandardTag
 
 SLACSPEAK_URL = "https://www.slac.stanford.edu/history/slacspeak/"
+
+# TODO: there are some manual required fixes in slacspeak to correctly parse
+# the html (unclosed <dd> tags)
 
 
 @dataclasses.dataclass
@@ -33,7 +35,11 @@ def parse_slacspeak(source: str) -> list[Definition]:
                     name=state.dt,
                     definition=state.dd,
                     source="slacspeak",
-                    tags=[StandardTag.slacspeak]
+                    tags=[StandardTag.slacspeak],
+                    url=URL(
+                        url="https://www.slac.stanford.edu/history/slacspeak/",
+                        text="slacspeak",
+                    )
                 ),
             )
             state.dd = None
@@ -43,7 +49,7 @@ def parse_slacspeak(source: str) -> list[Definition]:
 
 def get_slacspeak() -> list[Definition]:
     return parse_slacspeak(requests.get(SLACSPEAK_URL).text)
-    
+
 
 def get_packaged_slacspeak() -> list[Definition]:
     with open(util.TESTS_PATH / "slacspeak.html", encoding="ISO-8859-1") as fp:

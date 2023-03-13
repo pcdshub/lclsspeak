@@ -1,17 +1,17 @@
+import dataclasses
 import io
 import logging
-import bs4
-import pandas as pd
-import dataclasses
 import pathlib
 import re
 import subprocess
+from typing import Any, Callable, Generator, Optional
 
+import bs4
+import pandas as pd
 import requests
-from . import util
-from .definition import Definition
-from typing import Any, Generator, Optional
 
+from . import slacspeak, util
+from .definition import URL, Definition
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def _append_data(existing: str | list[str], value: str, delimiter: str = "\n") -
     if isinstance(existing, list):
         existing.append(value)
         return existing
-    
+
     if not existing:
         return value
     return delimiter.join((existing.rstrip(), value))
@@ -73,7 +73,7 @@ class NamedData:
                 else:
                     data[key] = _append_data(data.get(key, ""), value)
                     data["metadata"]["source_columns"].append(col)
-       
+
         return Definition(**data)
 
     def map_series_to_definition(self, row: pd.Series) -> Definition:
@@ -83,7 +83,10 @@ class NamedData:
         return [self.map_series_to_definition(row) for _, row in df.iterrows()]
 
 
+@dataclasses.dataclass
 class DataSource:
+    url: URL
+
     @property
     def data(self):
         return self.load()
@@ -99,7 +102,6 @@ class DataSource:
 
 @dataclasses.dataclass
 class CsvData(DataSource):
-    url: str
     cached: pathlib.Path
     mapping: NamedData
     tags: list[str]
@@ -107,24 +109,39 @@ class CsvData(DataSource):
     _data: Optional[list[Definition]] = None
     delimiter: str = ","
 
-    @property
-    def source(self) -> str:
-        return self.url
+    # @property
+    # def source(self) -> str:
+    #     return self.url.text
 
     def _load(self, use_cache: bool = True) -> list[Definition]:
         if use_cache:
             with open(self.cached, "rt", encoding=self.encoding) as fp:
                 source = fp.read()
         else:
-            source = requests.get(self.url).text
+            source = requests.get(self.url.url).text
 
         df = pd.read_csv(io.StringIO(source), delimiter=self.delimiter)
         for defn in self.mapping.map_to_definitions(df):
             if not defn.source:
-                defn.source = self.source
-            else:
-                defn.source = " - ".join((self.source, defn.source))
+                # Some source is required
+                defn.source = self.url.text
+            # else:
+            #     defn.source = " - ".join((self.url.text, defn.source))
+
+            if not defn.url:
+                defn.url = self.url
             yield defn
+
+
+Fixer = Callable[[Definition], None]
+
+
+def fixer_remove_prefixes(defn: Definition) -> None:
+    defn.name = defn.name.lstrip("_-")
+
+
+def _default_fixers() -> list[Fixer]:
+    return [fixer_remove_prefixes]
 
 
 @dataclasses.dataclass
@@ -132,6 +149,7 @@ class HtmlTable:
     mapping: NamedData
     id: Optional[str] = None
     class_: Optional[str] = None
+    fixers: list[Fixer] = dataclasses.field(default_factory=_default_fixers)
 
     def extract(self, source: bs4.BeautifulSoup | str) -> Generator[Definition, None, None]:
         if isinstance(source, bs4.BeautifulSoup):
@@ -152,6 +170,8 @@ class HtmlTable:
                 defn = self.mapping.map_dict_to_definition(dct)
                 if not defn.source:
                     defn.source = source
+                for fixer in self.fixers:
+                    fixer(defn)
                 if defn.valid:
                     yield defn
 
@@ -186,7 +206,7 @@ class RegexHtmlScraper(SourceScraper):
                                 metadata[key] = value
                             else:
                                 info[key] = value
-                        
+
                         if "source" not in info:
                             info["source"] = f"regex_scraper_{regex}"
 
@@ -201,7 +221,7 @@ def split_html_by_section(
     headers = soup.find_all(tag)
     if not headers:
         return
-  
+
     for header in headers:
         buffer = []
         header_text = get_html_text_from_tag(header)
@@ -236,7 +256,6 @@ class SectionScraper(SourceScraper):
 
 @dataclasses.dataclass
 class WebsiteData(DataSource):
-    url: str
     cached: pathlib.Path
     token: Optional[str] = None
     tables: Optional[list[HtmlTable]] = None
@@ -246,7 +265,7 @@ class WebsiteData(DataSource):
 
     @property
     def source(self) -> str:
-        return self.url or self.cached.name
+        return self.url.text
 
     def _load(self, use_cache: bool = True) -> Generator[Definition, None, None]:
         if use_cache:
@@ -254,16 +273,18 @@ class WebsiteData(DataSource):
                 source = fp.read()
         else:
             # TODO: token Authorization: Bearer (token)
-            source = requests.get(self.url).text
+            source = requests.get(self.url.url).text
 
         for table in self.tables or []:
             for defn in table.extract(source):
                 defn.source = self.source
+                defn.url = self.url
                 yield defn
 
         for scraper in self.scrapers or []:
             for defn in scraper.scrape(source):
                 defn.source = self.source
+                defn.url = self.url
                 yield defn
 
 
@@ -274,7 +295,7 @@ class PandocData(WebsiteData):
 
     @property
     def source(self) -> str:
-        return self.url or self.cached.name
+        return self.url.text
 
     def _convert_to_html(self) -> str:
         raw_html_bytes = subprocess.check_output(
@@ -307,7 +328,10 @@ class PandocData(WebsiteData):
 
 _packaged_data: list[DataSource] = [
     CsvData(
-        url="https://docs.google.com/spreadsheets/d/1SeQhfwZ6O-wg8tyr_MCQZY1boJC-6j3N6EzexfZB-AU",
+        url=URL(
+            url="https://docs.google.com/spreadsheets/d/1SeQhfwZ6O-wg8tyr_MCQZY1boJC-6j3N6EzexfZB-AU",
+            text="Naming Convention Constituent Component Mnemonics (CCC) spreadsheet",
+        ),
         cached=util.DATA_PATH / "pcds_ccc.csv",
         mapping=NamedData(
             column_to_key={
@@ -320,7 +344,10 @@ _packaged_data: list[DataSource] = [
         tags=[],
     ),
     CsvData(
-        url="https://slac.sharepoint.com/sites/pub/default.aspx",
+        url=URL(
+            url="https://slac.sharepoint.com/sites/pub/default.aspx",
+            text="Released documents",
+        ),
         cached=util.DATA_PATH / "from_doc_tables.csv",
         mapping=NamedData(
             column_to_key={
@@ -343,7 +370,10 @@ _external_data: list[DataSource] = [
     # ['Value', 'Device Type', 'Controllable']
 
     WebsiteData(
-        url="https://confluence.slac.stanford.edu/display/LCLSControls/LCLS+Naming+Conventions",
+        url=URL(
+            url="https://confluence.slac.stanford.edu/display/LCLSControls/LCLS+Naming+Conventions",
+            text="LCLS Naming Conventions",
+        ),
         cached=util.DATA_PATH / "LCLS+Naming+Conventions.html",
         token=util.CONFLUENCE_TOKEN,
         tables=[
@@ -378,7 +408,10 @@ _external_data: list[DataSource] = [
         ],
     ),
     WebsiteData(
-        url="https://confluence.slac.stanford.edu/display/L2SI/MODS+Nomenclature",
+        url=URL(
+            url="https://confluence.slac.stanford.edu/display/L2SI/MODS+Nomenclature",
+            text="MODS Nomenclature",
+        ),
         cached=util.DATA_PATH / "MODS+Nomenclature.html",
         token=util.CONFLUENCE_TOKEN,
         tables=[
@@ -400,7 +433,10 @@ _external_data: list[DataSource] = [
         ],
     ),
     WebsiteData(
-        url="https://confluence.slac.stanford.edu/display/TBD/Acronyms+that+are+commonly+encountered",
+        url=URL(
+            url="https://confluence.slac.stanford.edu/display/TBD/Acronyms+that+are+commonly+encountered",
+            text="SED@LCLS Acronyms",
+        ),
         cached=util.DATA_PATH / "Acronyms+that+are+commonly+encountered.html",
         token=util.CONFLUENCE_TOKEN,
         scrapers=[
@@ -439,7 +475,10 @@ def _add_packaged_docx_files():
     for fn in util.DATA_PATH.glob("*"):
         if fn.suffix.lower() in (".docx", ):
             source = PandocData(
-                url="",  # sorry
+                url=URL(
+                    url="https://github.com/pcdshub/lclsspeak",
+                    text="lclsspeak-docx-scraped",
+                ),  # TODO
                 cached=util.DATA_PATH / fn,
                 tables=default_docx_tables,
                 scrapers=default_docx_scrapers,
@@ -452,6 +491,7 @@ def load_packaged_data() -> list[Definition]:
         item
         for pkg in _packaged_data + _external_data
         for item in pkg.load(use_cache=True)
-    ]
+    ] + slacspeak.get_packaged_slacspeak()
+
 
 _add_packaged_docx_files()
