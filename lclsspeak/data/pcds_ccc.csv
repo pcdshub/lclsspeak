@@ -35,7 +35,7 @@ ENC,Encoder,Motion,peripherals,zlentz,3/1/2019,Added for mechanical schematics
 ENC,Laser Enclosure,Lasers,,awallace,,
 EO,Laser Safety Emergency Off Button,Lasers,,awallace,,
 ESW,Ethernet SWitch,IT Infrastructure,,awallace,,
-ETM,Electrometer,Misc instrumentation,,bhill,2/11/2020,Includes devices like Keithleys 
+ETM,Electrometer,Misc instrumentation,,bhill,2/11/2020,Includes devices like Keithleys
 EVR,LCLS EVR Timing Event Receiver,Timing,,bhill,2/8/2019,
 FDT,Feedthrough,"Mounting, Enclosures, Strain-relief",Legacy,awallace,,
 FIL,electronic FILter,Misc instrumentation,,marcio,12/11/2019,
@@ -57,7 +57,7 @@ GFS,Gauge fast shutter,Vacuum,Gauge,M. Ghaly,2/7/2019,
 GHC,Gauge Hot Cathode,Vacuum,Gauge,M. Ghaly,2/7/2019,
 GHP,Gauge Hot Cathode/Pirani Combination,Vacuum,Gauge,adpai,4/20/2020,Added for MKS 392
 GIGE,GigE Cameras,Cameras,,bhill,2/8/2019,
-GMP,Gauge Capacitance Manometer,Vacuum,Gauge,M. Ghaly,2/7/2019,deprecated - Use GCM 
+GMP,Gauge Capacitance Manometer,Vacuum,Gauge,M. Ghaly,2/7/2019,deprecated - Use GCM
 GPI,Gauge Pirani,Vacuum,Gauge,M. Ghaly,2/7/2019,
 GPS,Gauge pressure switch,Vacuum,Gauge,M. Ghaly,2/7/2019,
 GPT,Gauge  Pressure Trancducer,Vacuum,Gauge,M. Ghaly,7/29/2020,
@@ -112,7 +112,7 @@ PLC,Programmable logic controller,Commercial Electronics Hardware,Legacy,awallac
 PLV,Power supply Low Voltage,Power systems,,awallace,,
 PMF,Mechanical foreline pump,Vacuum,Pump,M. Ghaly,2/7/2019,
 PMPS,Photon Machine Protection System (component),MPS,,A. Wallace,10/9/2019,Identifier for PMPS related components
-PNL,Generic panel,SLAC electronics hardware,Legacy,awallace,,Generic panel with many uses such as EP box mounting. 
+PNL,Generic panel,SLAC electronics hardware,Legacy,awallace,,Generic panel with many uses such as EP box mounting.
 PPC,Pump - Peristaltic,Vacuum,,T. Johnson,,
 PPL,Patch Panel,Motion,,adpai,5/3/2019,"For generic Patch panels (network, endstation IO, etc)"
 PRO,Vacuum Roughing Pump,Vacuum,Pump,M. Ghaly,4/22/2019,
@@ -156,10 +156,10 @@ UXT,USB Extender,Commercial Electronics Hardware,,T. Johnson,6/5/2020,
 VCF,Valve Controller variable Flow valve,Vacuum,,J. Yin,5/2/2022,
 VCN,Variable controlled needle valve,Vacuum,,M. Ghaly,2/7/2019,
 VCP,Valve controlled by pump,Vacuum,,,,
-VFS,Fast Shutter valve,Vacuum,,M. Ghaly,2/7/2019,Valve indirectly controlled by the pump. This valve is not directly connected to our control system. 
+VFS,Fast Shutter valve,Vacuum,,M. Ghaly,2/7/2019,Valve indirectly controlled by the pump. This valve is not directly connected to our control system.
 VFV,Variable Flow Valve,Vacuum,,M. Ghaly,4/22/2019,
 VGC,Vacuum gate valves controlled,Vacuum,,M. Ghaly,2/7/2019,
-VGM,Manual Gate Valve,Vacuum,,M. Ghaly,2/7/2019,Interlocked by pressure difference only. 
+VGM,Manual Gate Valve,Vacuum,,M. Ghaly,2/7/2019,Interlocked by pressure difference only.
 VGP,Motorized proportional gate valve,Vacuum,,M. Ghaly,2/7/2019,
 VIM,Inline manual valve ,Vacuum,,nwbrown,3/11/2020,
 VME,VME crate,VME,Legacy,awallace,,
