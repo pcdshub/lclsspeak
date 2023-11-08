@@ -2,7 +2,7 @@
 build-backend = "setuptools.build_meta"
 requires = [
     "setuptools>=45",
-    "setuptools_scm[toml]>=8.0"
+    "setuptools_scm[toml]>=6.2"
 ]
 
 [project]
@@ -37,7 +37,7 @@ file = "LICENSE"
 "lclsspeak" = "lclsspeak.bin.main:main"
 
 [tool.setuptools_scm]
-version_file = "lclsspeak/_version.py"
+write_to = "lclsspeak/_version.py"
 
 [tool.setuptools.dynamic.readme]
 file = "README.rst"
